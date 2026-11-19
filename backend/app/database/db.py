@@ -44,6 +44,8 @@ def init_db():
                     conn.execute(text("ALTER TABLE users ADD COLUMN hashed_password VARCHAR(255)"))
                 if "phone" not in cols:
                     conn.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR(20)"))
+                if "email" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR(150)"))
                 conn.commit()
         except Exception as e:
             print(f"Warning during migration: {e}")

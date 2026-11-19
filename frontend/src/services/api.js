@@ -66,6 +66,30 @@ export const authAPI = {
     const response = await apiClient.put('/auth/profile', data);
     return response.data;
   },
+
+  forgotPassword: async (channel, identifier) => {
+    const response = await apiClient.post('/auth/forgot-password', {
+      channel,
+      identifier,
+    });
+    return response.data;
+  },
+
+  verifyOtp: async (identifier, otp_code) => {
+    const response = await apiClient.post('/auth/verify-otp', {
+      identifier,
+      otp_code,
+    });
+    return response.data;
+  },
+
+  resetPassword: async (reset_token, new_password) => {
+    const response = await apiClient.post('/auth/reset-password', {
+      reset_token,
+      new_password,
+    });
+    return response.data;
+  },
 };
 
 export const chatAPI = {

@@ -14,9 +14,10 @@ class User(Base):
     
     id = Column(Integer, primary_key=True)
     username = Column(String(100), unique=True, index=True, nullable=True)
+    email = Column(String(150), unique=True, index=True, nullable=True)
     hashed_password = Column(String(255), nullable=True)
     name = Column(String(100), nullable=True)
-    phone = Column(String(20), nullable=True)
+    phone = Column(String(20), index=True, nullable=True)
     language = Column(String(10), default="en")  # 'en' or 'kn'
     district = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -24,6 +25,7 @@ class User(Base):
     # Relationships
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     tokens = relationship("AuthToken", back_populates="user", cascade="all, delete-orphan")
+    password_resets = relationship("PasswordReset", back_populates="user", cascade="all, delete-orphan")
 
 
 class AuthToken(Base):
@@ -36,6 +38,23 @@ class AuthToken(Base):
     
     # Relationships
     user = relationship("User", back_populates="tokens")
+
+
+class PasswordReset(Base):
+    __tablename__ = "password_resets"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    channel = Column(String(20), nullable=False)  # 'mobile' or 'email'
+    identifier = Column(String(150), nullable=False)  # phone number or email address
+    otp_code = Column(String(10), nullable=True)  # 6-digit OTP code
+    reset_token = Column(String(128), unique=True, index=True, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="password_resets")
 
 
 class Conversation(Base):

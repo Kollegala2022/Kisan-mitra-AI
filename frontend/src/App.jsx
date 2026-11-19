@@ -10,7 +10,7 @@ import ConversationHistory from './components/ConversationHistory';
 import { chatAPI, authAPI, getToken } from './services/api';
 
 function App() {
-  const [language, setLanguage] = useState('kn'); // Default to Kannada as requested by user
+  const [language, setLanguage] = useState('kn'); // Default to Kannada
   const [district, setDistrict] = useState(null);
   const [crop, setCrop] = useState(null);
   const [conversationId, setConversationId] = useState(null);
@@ -23,6 +23,7 @@ function App() {
 
   // Authentication & Conversation History states
   const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [conversations, setConversations] = useState([]);
 
@@ -38,7 +39,8 @@ function App() {
 
   // Check auth session on startup
   useEffect(() => {
-    if (getToken()) {
+    const token = getToken();
+    if (token) {
       authAPI
         .getMe()
         .then((user) => {
@@ -49,7 +51,12 @@ function App() {
         })
         .catch(() => {
           setCurrentUser(null);
+        })
+        .finally(() => {
+          setIsAuthChecking(false);
         });
+    } else {
+      setIsAuthChecking(false);
     }
   }, [loadConversations]);
 
@@ -249,6 +256,33 @@ function App() {
       : `📍 ${district}`
     : `📍 ${language === 'en' ? 'All Karnataka' : 'ಸಮಗ್ರ ಕರ್ನಾಟಕ'}`;
 
+  // If waiting for token validation on first load, show smooth loading screen
+  if (isAuthChecking) {
+    return (
+      <div className="auth-loading-screen">
+        <div className="loading-spinner">🌾</div>
+        <p>{language === 'kn' ? 'ಕಿಸಾನ್‌ಮಿತ್ರ AI ಲೋಡ್ ಆಗುತ್ತಿದೆ...' : 'Loading KisanMitra AI...'}</p>
+      </div>
+    );
+  }
+
+  // MANDATORY AUTH GATE: If user is not logged in, immediately ask for Sign Up (or Login)
+  if (!currentUser) {
+    return (
+      <AuthModal
+        isOpen={true}
+        mandatory={true}
+        initialTab="signup"
+        onClose={() => {}}
+        onSuccess={handleAuthSuccess}
+        language={language}
+        districts={districts}
+        onLanguageChange={handleLanguageChange}
+      />
+    );
+  }
+
+  // Once authenticated, render full application
   return (
     <div className="app">
       {/* Top Navigation Bar */}
@@ -292,29 +326,20 @@ function App() {
             </button>
           )}
 
-          {/* User Auth Section */}
-          {currentUser ? (
-            <div className="user-profile-badge">
-              <span className="user-avatar-icon">👤</span>
-              <span className="user-display-name">
-                {currentUser.name || currentUser.username}
-              </span>
-              <button
-                className="btn-user-logout"
-                onClick={handleLogout}
-                title={language === 'kn' ? 'ಖಾತೆಯಿಂದ ನಿರ್ಗಮಿಸಿ' : 'Logout'}
-              >
-                🚪 {language === 'kn' ? 'ನಿರ್ಗಮಿಸಿ' : 'Logout'}
-              </button>
-            </div>
-          ) : (
+          {/* User Profile & Logout */}
+          <div className="user-profile-badge">
+            <span className="user-avatar-icon">👤</span>
+            <span className="user-display-name">
+              {currentUser.name || currentUser.username}
+            </span>
             <button
-              className="btn-user-login-trigger"
-              onClick={() => setIsAuthModalOpen(true)}
+              className="btn-user-logout"
+              onClick={handleLogout}
+              title={language === 'kn' ? 'ಖಾತೆಯಿಂದ ನಿರ್ಗಮಿಸಿ' : 'Logout'}
             >
-              <span>👤</span> {language === 'kn' ? 'ಲಾಗಿನ್ / ಸೈನ್ ಅಪ್' : 'Sign In'}
+              🚪 {language === 'kn' ? 'ನಿರ್ಗಮಿಸಿ' : 'Logout'}
             </button>
-          )}
+          </div>
 
           <LanguageSelector language={language} onLanguageChange={handleLanguageChange} />
         </div>
@@ -415,15 +440,6 @@ function App() {
             : '⚠️ ಸೂಚನೆ: ಕಿಸನ್‌ಮಿತ್ರ AI ಅಧಿಕೃತ ಕೃಷಿ ದಾಖಲೆಗಳ ಆಧಾರದ ಮೇಲೆ ಮಾಹಿತಿ ನೀಡುತ್ತದೆ. ಗಂಭೀರ ರೋಗ ಅಥವಾ ಯೋಜನೆ ಅರ್ಹತೆಗೆ ಅಧಿಕೃತ ಸರ್ಕಾರಿ ಪೋರ್ಟಲ್ ಹಾಗೂ ಸ್ಥಳೀಯ ಕೃಷಿ ವಿಜ್ಞಾನ ಕೇಂದ್ರ (KVK) ಸಂಪರ್ಕಿಸಿ.'}
         </p>
       </footer>
-
-      {/* Auth Modal (Sign Up & Login) */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
-        language={language}
-        districts={districts}
-      />
     </div>
   );
 }
