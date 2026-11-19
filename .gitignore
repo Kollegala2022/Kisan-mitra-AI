@@ -1,0 +1,62 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Virtual environments
+venv/
+backend/venv/
+env/
+.venv/
+
+# Backend
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.so
+backend/.Python
+backend/build/
+backend/develop-eggs/
+backend/dist/
+backend/downloads/
+backend/eggs/
+backend/.eggs/
+backend/lib/
+backend/lib64/
+backend/parts/
+backend/sdist/
+backend/var/
+backend/wheels/
+backend/*.egg-info/
+backend/.installed.cfg
+backend/*.egg
+backend/kisanmitra.db
+backend/app/**/__pycache__/
+backend/data/chroma/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.parcel-cache/
+frontend/.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
