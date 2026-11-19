@@ -1,11 +1,72 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const TOKEN_KEY = 'kisanmitra_auth_token';
+
+export const getToken = () => localStorage.getItem(TOKEN_KEY);
+export const setToken = (token) => {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+};
+export const removeToken = () => localStorage.removeItem(TOKEN_KEY);
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 45000,
 });
+
+// Automatically inject Authorization Bearer token if present
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = getToken();
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+export const authAPI = {
+  signup: async (data) => {
+    const response = await apiClient.post('/auth/signup', data);
+    if (response.data?.token) {
+      setToken(response.data.token);
+    }
+    return response.data;
+  },
+
+  login: async (data) => {
+    const response = await apiClient.post('/auth/login', data);
+    if (response.data?.token) {
+      setToken(response.data.token);
+    }
+    return response.data;
+  },
+
+  getMe: async () => {
+    const response = await apiClient.get('/auth/me');
+    return response.data;
+  },
+
+  logout: async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (e) {
+      // Continue cleanup even if server network error
+    } finally {
+      removeToken();
+    }
+  },
+
+  updateProfile: async (data) => {
+    const response = await apiClient.put('/auth/profile', data);
+    return response.data;
+  },
+};
 
 export const chatAPI = {
   sendMessage: async (message, language, district, crop, conversationId) => {

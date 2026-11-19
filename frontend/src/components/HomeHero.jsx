@@ -1,5 +1,6 @@
 import React from 'react';
 import './HomeHero.css';
+import { KANNADA_DISTRICT_MAP } from './DistrictSelector';
 
 function HomeHero({ language, district, crop, onActionClick, weatherData }) {
   const cards = [
@@ -132,7 +133,11 @@ function HomeHero({ language, district, crop, onActionClick, weatherData }) {
           <div className="hero-weather-card">
             <div className="weather-card-header">
               <span className="weather-badge">🌦️ {language === 'en' ? 'Live Weather' : 'ಹವಾಮಾನ'}</span>
-              <span className="weather-district">{weatherData.weather.district}</span>
+              <span className="weather-district">
+                {language === 'kn' && KANNADA_DISTRICT_MAP[weatherData.weather.district]
+                  ? `${KANNADA_DISTRICT_MAP[weatherData.weather.district]} (${weatherData.weather.district})`
+                  : weatherData.weather.district}
+              </span>
             </div>
             <div className="weather-temp-row">
               <div className="weather-temp">{weatherData.weather.temperature_celsius}°C</div>

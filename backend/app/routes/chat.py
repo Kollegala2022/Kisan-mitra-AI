@@ -10,6 +10,7 @@ from app.database.db import get_db
 from app.database.models import User, Conversation, Message, FarmerContext
 from app.agents.farmer_agent import get_farmer_agent
 from app.rag.ingest import add_knowledge_documents_to_rag
+from app.routes.auth import get_current_user_from_token
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
@@ -47,7 +48,11 @@ class MessageResponse(BaseModel):
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat(
+    request: ChatRequest,
+    current_user: Optional[User] = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
+):
     """
     Handle a chat message from user
     """
@@ -71,17 +76,23 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         )
     
     try:
-        # Get or create user (anonymous)
-        user = db.query(User).first()
-        if not user:
-            user = User(language=request.language, district=request.district)
-            db.add(user)
-            db.flush()
-        else:
-            # Update user language and district
+        # Determine user: authenticated user or guest user
+        if current_user:
+            user = current_user
             user.language = request.language
             if request.district:
                 user.district = request.district
+        else:
+            # Look for existing guest user or create one
+            user = db.query(User).filter(User.username == None).first()
+            if not user:
+                user = User(language=request.language, district=request.district)
+                db.add(user)
+                db.flush()
+            else:
+                user.language = request.language
+                if request.district:
+                    user.district = request.district
         
         # Get or create conversation
         if request.conversation_id:
@@ -180,16 +191,19 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/conversations", response_model=List[ConversationResponse])
-async def get_conversations(db: Session = Depends(get_db)):
+async def get_conversations(
+    current_user: Optional[User] = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
+):
     """Get all conversations for current user"""
     try:
-        user = db.query(User).first()
-        if not user:
+        # If not logged in, return empty list (login to view and save conversation history)
+        if not current_user:
             return []
         
         conversations = db.query(Conversation).filter(
-            Conversation.user_id == user.id
-        ).order_by(Conversation.created_at.desc()).all()
+            Conversation.user_id == current_user.id
+        ).order_by(Conversation.updated_at.desc(), Conversation.created_at.desc()).all()
         
         return [
             ConversationResponse(
@@ -209,12 +223,18 @@ async def get_conversations(db: Session = Depends(get_db)):
 
 
 @router.get("/conversations/{conversation_id}")
-async def get_conversation_messages(conversation_id: int, db: Session = Depends(get_db)):
+async def get_conversation_messages(
+    conversation_id: int,
+    current_user: Optional[User] = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
+):
     """Get all messages in a conversation"""
     try:
-        conversation = db.query(Conversation).filter(
-            Conversation.id == conversation_id
-        ).first()
+        query = db.query(Conversation).filter(Conversation.id == conversation_id)
+        if current_user:
+            query = query.filter(Conversation.user_id == current_user.id)
+            
+        conversation = query.first()
         
         if not conversation:
             raise HTTPException(
@@ -252,12 +272,18 @@ async def get_conversation_messages(conversation_id: int, db: Session = Depends(
 
 
 @router.delete("/conversations/{conversation_id}")
-async def delete_conversation(conversation_id: int, db: Session = Depends(get_db)):
+async def delete_conversation(
+    conversation_id: int,
+    current_user: Optional[User] = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
+):
     """Delete a conversation"""
     try:
-        conversation = db.query(Conversation).filter(
-            Conversation.id == conversation_id
-        ).first()
+        query = db.query(Conversation).filter(Conversation.id == conversation_id)
+        if current_user:
+            query = query.filter(Conversation.user_id == current_user.id)
+            
+        conversation = query.first()
         
         if not conversation:
             raise HTTPException(

@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import ChatWindow from './components/ChatWindow';
 import LanguageSelector from './components/LanguageSelector';
-import DistrictSelector from './components/DistrictSelector';
+import DistrictSelector, { KANNADA_DISTRICT_MAP } from './components/DistrictSelector';
 import CropSelector from './components/CropSelector';
 import QuickActions from './components/QuickActions';
-import { chatAPI } from './services/api';
+import AuthModal from './components/AuthModal';
+import ConversationHistory from './components/ConversationHistory';
+import { chatAPI, authAPI, getToken } from './services/api';
 
 function App() {
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState('kn'); // Default to Kannada as requested by user
   const [district, setDistrict] = useState(null);
   const [crop, setCrop] = useState(null);
   const [conversationId, setConversationId] = useState(null);
@@ -19,7 +21,39 @@ function App() {
   const [crops, setCrops] = useState([]);
   const [weatherData, setWeatherData] = useState(null);
 
-  // Load initial data
+  // Authentication & Conversation History states
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [conversations, setConversations] = useState([]);
+
+  // Fetch conversations for logged in user
+  const loadConversations = useCallback(async () => {
+    try {
+      const data = await chatAPI.getConversations();
+      setConversations(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.warn('Could not load conversations:', err);
+    }
+  }, []);
+
+  // Check auth session on startup
+  useEffect(() => {
+    if (getToken()) {
+      authAPI
+        .getMe()
+        .then((user) => {
+          setCurrentUser(user);
+          if (user.district) setDistrict(user.district);
+          if (user.language) setLanguage(user.language);
+          loadConversations();
+        })
+        .catch(() => {
+          setCurrentUser(null);
+        });
+    }
+  }, [loadConversations]);
+
+  // Load initial reference data
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -39,7 +73,8 @@ function App() {
   // Fetch weather data when district changes
   useEffect(() => {
     if (district) {
-      chatAPI.getWeather(district)
+      chatAPI
+        .getWeather(district)
         .then((data) => {
           setWeatherData(data);
         })
@@ -88,11 +123,18 @@ function App() {
           needs_expert: response.needs_expert,
         },
       ]);
+
+      // Refresh conversations list if user is logged in
+      if (currentUser) {
+        loadConversations();
+      }
     } catch (err) {
       console.error('Error sending message:', err);
       setError(
         err.response?.data?.detail ||
-        'Failed to get response from KisanMitra AI. Please try again.'
+        (language === 'kn'
+          ? 'ಕಿಸಾನ್‌ಮಿತ್ರ AI ಪ್ರತಿಕ್ರಿಯೆ ಪಡೆಯಲು ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.'
+          : 'Failed to get response from KisanMitra AI. Please try again.')
       );
     } finally {
       setIsLoading(false);
@@ -105,8 +147,74 @@ function App() {
     setError(null);
   };
 
+  const handleSelectConversation = async (id) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await chatAPI.getConversationMessages(id);
+      setConversationId(data.id);
+      setMessages(
+        (data.messages || []).map((m) => {
+          let parsedSources = null;
+          if (m.sources) {
+            try {
+              parsedSources = typeof m.sources === 'string' ? JSON.parse(m.sources.replace(/'/g, '"')) : m.sources;
+            } catch {
+              parsedSources = m.sources;
+            }
+          }
+          return {
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            created_at: m.created_at,
+            sources: parsedSources,
+          };
+        })
+      );
+    } catch (err) {
+      console.error('Failed to load conversation:', err);
+      setError(
+        language === 'kn'
+          ? 'ಸಂಭಾಷಣೆಯನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ'
+          : 'Failed to load conversation'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteConversation = async (id) => {
+    try {
+      await chatAPI.deleteConversation(id);
+      if (conversationId === id) {
+        handleClearChat();
+      }
+      loadConversations();
+    } catch (err) {
+      console.error('Failed to delete conversation:', err);
+    }
+  };
+
+  const handleAuthSuccess = (user) => {
+    setCurrentUser(user);
+    if (user.district) setDistrict(user.district);
+    if (user.language) setLanguage(user.language);
+    loadConversations();
+  };
+
+  const handleLogout = async () => {
+    await authAPI.logout();
+    setCurrentUser(null);
+    setConversations([]);
+    handleClearChat();
+  };
+
   const handleLanguageChange = (newLanguage) => {
     setLanguage(newLanguage);
+    if (currentUser) {
+      authAPI.updateProfile({ language: newLanguage }).catch(() => {});
+    }
   };
 
   const handleQuickAction = (action) => {
@@ -134,6 +242,13 @@ function App() {
     }
   };
 
+  // Localized district pill text
+  const districtPillText = district
+    ? language === 'kn' && KANNADA_DISTRICT_MAP[district]
+      ? `📍 ${KANNADA_DISTRICT_MAP[district]} (${district})`
+      : `📍 ${district}`
+    : `📍 ${language === 'en' ? 'All Karnataka' : 'ಸಮಗ್ರ ಕರ್ನಾಟಕ'}`;
+
   return (
     <div className="app">
       {/* Top Navigation Bar */}
@@ -152,15 +267,9 @@ function App() {
 
         <div className="header-center">
           <div className="active-context-pills">
-            {district ? (
-              <span className="context-pill district-pill">
-                📍 {district}
-              </span>
-            ) : (
-              <span className="context-pill hint-pill">
-                📍 {language === 'en' ? 'All Karnataka' : 'ಸಮಗ್ರ ಕರ್ನಾಟಕ'}
-              </span>
-            )}
+            <span className={`context-pill ${district ? 'district-pill' : 'hint-pill'}`}>
+              {districtPillText}
+            </span>
 
             {crop && (
               <span className="context-pill crop-pill">
@@ -182,6 +291,31 @@ function App() {
               <span>🏠</span> {language === 'en' ? 'Home / New Chat' : 'ಮುಖಪುಟ / ಹೊಸ ಚಾಟ್'}
             </button>
           )}
+
+          {/* User Auth Section */}
+          {currentUser ? (
+            <div className="user-profile-badge">
+              <span className="user-avatar-icon">👤</span>
+              <span className="user-display-name">
+                {currentUser.name || currentUser.username}
+              </span>
+              <button
+                className="btn-user-logout"
+                onClick={handleLogout}
+                title={language === 'kn' ? 'ಖಾತೆಯಿಂದ ನಿರ್ಗಮಿಸಿ' : 'Logout'}
+              >
+                🚪 {language === 'kn' ? 'ನಿರ್ಗಮಿಸಿ' : 'Logout'}
+              </button>
+            </div>
+          ) : (
+            <button
+              className="btn-user-login-trigger"
+              onClick={() => setIsAuthModalOpen(true)}
+            >
+              <span>👤</span> {language === 'kn' ? 'ಲಾಗಿನ್ / ಸೈನ್ ಅಪ್' : 'Sign In'}
+            </button>
+          )}
+
           <LanguageSelector language={language} onLanguageChange={handleLanguageChange} />
         </div>
       </header>
@@ -234,13 +368,19 @@ function App() {
             <QuickActions onActionClick={handleQuickAction} language={language} />
           </div>
 
-          {messages.length > 0 && (
-            <div className="sidebar-section">
-              <button className="btn btn-secondary btn-block" onClick={handleClearChat}>
-                🔄 {language === 'en' ? 'Start Fresh Chat' : 'ಹೊಸ ಚಾಟ್ ಆರಂಭಿಸಿ'}
-              </button>
-            </div>
-          )}
+          {/* Conversation History Section */}
+          <div className="sidebar-section">
+            <ConversationHistory
+              conversations={conversations}
+              currentConversationId={conversationId}
+              onSelectConversation={handleSelectConversation}
+              onNewChat={handleClearChat}
+              onDeleteConversation={handleDeleteConversation}
+              currentUser={currentUser}
+              onOpenAuth={() => setIsAuthModalOpen(true)}
+              language={language}
+            />
+          </div>
 
           {/* Quick Help Card */}
           <div className="sidebar-help-card">
@@ -275,6 +415,15 @@ function App() {
             : '⚠️ ಸೂಚನೆ: ಕಿಸನ್‌ಮಿತ್ರ AI ಅಧಿಕೃತ ಕೃಷಿ ದಾಖಲೆಗಳ ಆಧಾರದ ಮೇಲೆ ಮಾಹಿತಿ ನೀಡುತ್ತದೆ. ಗಂಭೀರ ರೋಗ ಅಥವಾ ಯೋಜನೆ ಅರ್ಹತೆಗೆ ಅಧಿಕೃತ ಸರ್ಕಾರಿ ಪೋರ್ಟಲ್ ಹಾಗೂ ಸ್ಥಳೀಯ ಕೃಷಿ ವಿಜ್ಞಾನ ಕೇಂದ್ರ (KVK) ಸಂಪರ್ಕಿಸಿ.'}
         </p>
       </footer>
+
+      {/* Auth Modal (Sign Up & Login) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+        language={language}
+        districts={districts}
+      />
     </div>
   );
 }

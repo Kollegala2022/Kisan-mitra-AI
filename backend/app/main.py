@@ -19,7 +19,7 @@ except ImportError:
 from app.database.db import init_db
 from app.rag.ingest import seed_initial_knowledge_base, add_knowledge_documents_to_rag
 from app.database.db import SessionLocal
-from app.routes import chat, reference
+from app.routes import chat, reference, auth
 
 # Create FastAPI app
 app = FastAPI(
@@ -49,6 +49,7 @@ if GZIPMiddleware:
     app.add_middleware(GZIPMiddleware, minimum_size=1000)
 
 # Include routers
+app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(reference.router)
 

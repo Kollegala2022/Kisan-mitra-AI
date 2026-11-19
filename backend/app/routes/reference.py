@@ -35,11 +35,39 @@ KARNATAKA_CROPS = [
     {"id": 22, "name": "Arhar (Pigeon Pea)", "kannada": "ಟೂರಿ"},
 ]
 
-# List of districts in Karnataka
+# List of districts in Karnataka with official Kannada names
 KARNATAKA_DISTRICTS = [
-    "Belgaum", "Bagalkot", "Bijapur", "Dharwad", "Gadag", "Haveri", "Uttara Kannada", "Ballari",
-    "Belagavi", "Chitradurga", "Kolar", "Chikballapur", "Tumkur", "Bengaluru", "Ramanagara",
-    "Mandya", "Mysuru", "Chamarajanagara", "Hassan", "Kodagu", "Dakshina Kannada", "Udupi"
+    {"name": "Bagalkot", "kannada": "ಬಾಗಲಕೋಟೆ"},
+    {"name": "Ballari", "kannada": "ಬಳ್ಳಾರಿ"},
+    {"name": "Belagavi", "kannada": "ಬೆಳಗಾವಿ"},
+    {"name": "Bengaluru Urban", "kannada": "ಬೆಂಗಳೂರು ನಗರ"},
+    {"name": "Bengaluru Rural", "kannada": "ಬೆಂಗಳೂರು ಗ್ರಾಮಾಂತರ"},
+    {"name": "Bidar", "kannada": "ಬೀದರ್"},
+    {"name": "Chamarajanagara", "kannada": "ಚಾಮರಾಜನಗರ"},
+    {"name": "Chikkaballapur", "kannada": "ಚಿಕ್ಕಬಳ್ಳಾಪುರ"},
+    {"name": "Chikkamagaluru", "kannada": "ಚಿಕ್ಕಮಗಳೂರು"},
+    {"name": "Chitradurga", "kannada": "ಚಿತ್ರದುರ್ಗ"},
+    {"name": "Dakshina Kannada", "kannada": "ದಕ್ಷಿಣ ಕನ್ನಡ"},
+    {"name": "Davanagere", "kannada": "ದಾವಣಗೆರೆ"},
+    {"name": "Dharwad", "kannada": "ಧಾರವಾಡ"},
+    {"name": "Gadag", "kannada": "ಗದಗ"},
+    {"name": "Hassan", "kannada": "ಹಾಸನ"},
+    {"name": "Haveri", "kannada": "ಹಾವೇರಿ"},
+    {"name": "Kalaburagi", "kannada": "ಕಲಬುರಗಿ"},
+    {"name": "Kodagu", "kannada": "ಕೊಡಗು"},
+    {"name": "Kolar", "kannada": "ಕೋಲಾರ"},
+    {"name": "Koppal", "kannada": "ಕೊಪ್ಪಳ"},
+    {"name": "Mandya", "kannada": "ಮಂಡ್ಯ"},
+    {"name": "Mysuru", "kannada": "ಮೈಸೂರು"},
+    {"name": "Raichur", "kannada": "ರಾಯಚೂರು"},
+    {"name": "Ramanagara", "kannada": "ರಾಮನಗರ"},
+    {"name": "Shivamogga", "kannada": "ಶಿವಮೊಗ್ಗ"},
+    {"name": "Tumakuru", "kannada": "ತುಮಕೂರು"},
+    {"name": "Udupi", "kannada": "ಉಡುಪಿ"},
+    {"name": "Uttara Kannada", "kannada": "ಉತ್ತರ ಕನ್ನಡ"},
+    {"name": "Vijayapura", "kannada": "ವಿಜಯಪುರ"},
+    {"name": "Vijayanagara", "kannada": "ವಿಜಯನಗರ"},
+    {"name": "Yadgir", "kannada": "ಯಾದಗಿರಿ"},
 ]
 
 
@@ -66,7 +94,7 @@ async def get_districts():
         return {
             "status": "success",
             "count": len(KARNATAKA_DISTRICTS),
-            "districts": sorted(KARNATAKA_DISTRICTS)
+            "districts": KARNATAKA_DISTRICTS
         }
     except Exception as e:
         raise HTTPException(

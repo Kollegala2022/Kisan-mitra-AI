@@ -13,13 +13,29 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True)
+    username = Column(String(100), unique=True, index=True, nullable=True)
+    hashed_password = Column(String(255), nullable=True)
     name = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
     language = Column(String(10), default="en")  # 'en' or 'kn'
     district = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    conversations = relationship("Conversation", back_populates="user")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    tokens = relationship("AuthToken", back_populates="user", cascade="all, delete-orphan")
+
+
+class AuthToken(Base):
+    __tablename__ = "auth_tokens"
+    
+    id = Column(Integer, primary_key=True)
+    token = Column(String(128), unique=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="tokens")
 
 
 class Conversation(Base):

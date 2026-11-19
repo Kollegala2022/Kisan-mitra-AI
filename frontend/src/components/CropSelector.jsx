@@ -14,11 +14,17 @@ function CropSelector({ crops, selectedCrop, onCropChange, language }) {
         <option value="">
           {language === 'en' ? '-- Select a Crop --' : '-- ಬೆಳೆ ಆಯ್ಕೆಮಾಡಿ --'}
         </option>
-        {crops.map((crop) => (
-          <option key={crop.id} value={crop.name}>
-            🌱 {crop.name} {crop.kannada ? `(${crop.kannada})` : ''}
-          </option>
-        ))}
+        {crops.map((crop) => {
+          const displayLabel = language === 'kn' && crop.kannada
+            ? `${crop.kannada} (${crop.name})`
+            : `${crop.name} ${crop.kannada ? `(${crop.kannada})` : ''}`;
+
+          return (
+            <option key={crop.id} value={crop.name}>
+              🌱 {displayLabel}
+            </option>
+          );
+        })}
       </select>
     </div>
   );
