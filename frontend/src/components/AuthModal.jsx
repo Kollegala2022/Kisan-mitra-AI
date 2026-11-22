@@ -38,8 +38,6 @@ function AuthModal({
   const [successMessage, setSuccessMessage] = useState(null);
   const [demoOtpNotice, setDemoOtpNotice] = useState(null);
 
-  if (!isOpen) return null;
-
   const resetAllFields = () => {
     setUsername('');
     setPassword('');
@@ -56,6 +54,13 @@ function AuthModal({
     setSuccessMessage(null);
     setDemoOtpNotice(null);
   };
+
+  // Reset fields whenever mode changes or component mounts
+  React.useEffect(() => {
+    resetAllFields();
+  }, [mode]);
+
+  if (!isOpen) return null;
 
   const handleClose = () => {
     if (mandatory) return; // Cannot close if initial auth is mandatory
@@ -350,9 +355,8 @@ function AuthModal({
               type="button"
               className={`auth-tab-btn ${mode === 'signup' ? 'active' : ''}`}
               onClick={() => {
+                resetAllFields();
                 setMode('signup');
-                setError(null);
-                setSuccessMessage(null);
               }}
             >
               {language === 'kn' ? 'ಖಾತೆ ರಚಿಸಿ (Sign Up)' : 'Sign Up'}
@@ -361,9 +365,8 @@ function AuthModal({
               type="button"
               className={`auth-tab-btn ${mode === 'login' ? 'active' : ''}`}
               onClick={() => {
+                resetAllFields();
                 setMode('login');
-                setError(null);
-                setSuccessMessage(null);
               }}
             >
               {language === 'kn' ? 'ಲಾಗಿನ್ (Login)' : 'Sign In'}
@@ -383,7 +386,7 @@ function AuthModal({
 
         {/* ================= MODE 1: SIGN UP ================= */}
         {mode === 'signup' && (
-          <form onSubmit={handleAuthSubmit} className="auth-form">
+          <form onSubmit={handleAuthSubmit} className="auth-form" autoComplete="off">
             <div className="form-group">
               <label htmlFor="auth-name">
                 {language === 'kn' ? 'ಪೂರ್ಣ ಹೆಸರು (Full Name)' : 'Full Name'} *
@@ -392,6 +395,7 @@ function AuthModal({
                 id="auth-name"
                 type="text"
                 required
+                autoComplete="off"
                 placeholder={language === 'kn' ? 'ಉದಾ: ಬಸವರಾಜ / Basavaraj' : 'e.g. Basavaraj'}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -407,6 +411,7 @@ function AuthModal({
                   id="auth-username"
                   type="text"
                   required
+                  autoComplete="off"
                   placeholder={language === 'kn' ? 'ಉದಾ: farmer_raju' : 'e.g. farmer_raju'}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -421,6 +426,7 @@ function AuthModal({
                   id="auth-phone"
                   type="tel"
                   required
+                  autoComplete="off"
                   placeholder="9876543210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -435,6 +441,7 @@ function AuthModal({
               <input
                 id="auth-email"
                 type="email"
+                autoComplete="off"
                 placeholder="farmer@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -476,6 +483,7 @@ function AuthModal({
                 id="auth-password"
                 type="password"
                 required
+                autoComplete="new-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -494,7 +502,7 @@ function AuthModal({
 
         {/* ================= MODE 2: LOGIN ================= */}
         {mode === 'login' && (
-          <form onSubmit={handleAuthSubmit} className="auth-form">
+          <form onSubmit={handleAuthSubmit} className="auth-form" autoComplete="off">
             <div className="form-group">
               <label htmlFor="login-username">
                 {language === 'kn'
@@ -505,6 +513,7 @@ function AuthModal({
                 id="login-username"
                 type="text"
                 required
+                autoComplete="off"
                 placeholder={language === 'kn' ? 'ಬಳಕೆದಾರ ಹೆಸರು ಅಥವಾ 10-ಅಂಕಿಯ ಮೊಬೈಲ್' : 'Enter username, phone, or email'}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -533,6 +542,7 @@ function AuthModal({
                 id="login-password"
                 type="password"
                 required
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
