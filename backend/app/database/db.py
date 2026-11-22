@@ -7,6 +7,9 @@ from sqlalchemy.orm import sessionmaker, Session
 from .models import Base
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./kisanmitra.db")
+# SQLAlchemy 1.4+ and 2.0 require 'postgresql://' instead of legacy 'postgres://'
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # Create engine
 engine = create_engine(
