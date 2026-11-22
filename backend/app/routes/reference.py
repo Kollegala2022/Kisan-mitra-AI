@@ -154,7 +154,7 @@ async def get_weather(district: str = None):
         weather_service = WeatherService()
         weather_data = weather_service.get_weather(district)
         
-        if weather_data.get("error"):
+        if weather_data.get("error") and not weather_data.get("weather"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=weather_data["error"]

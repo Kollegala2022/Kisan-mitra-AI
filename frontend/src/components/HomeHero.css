@@ -229,6 +229,18 @@
   border-left: 3px solid #facc15;
 }
 
+.hero-weather-card-hint {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hero-weather-hint-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #fef08a;
+  margin: 6px 0 0 0;
+}
+
 /* ==========================================================================
    GRID SECTION - Realistic Photography Feature Cards
    ========================================================================== */

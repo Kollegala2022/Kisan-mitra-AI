@@ -129,7 +129,7 @@ function HomeHero({ language, district, crop, onActionClick, weatherData }) {
           </div>
         </div>
 
-        {weatherData && weatherData.weather && (
+        {weatherData && weatherData.weather ? (
           <div className="hero-weather-card">
             <div className="weather-card-header">
               <span className="weather-badge">🌦️ {language === 'en' ? 'Live Weather' : 'ಹವಾಮಾನ'}</span>
@@ -144,14 +144,25 @@ function HomeHero({ language, district, crop, onActionClick, weatherData }) {
               <div className="weather-condition">{weatherData.weather.weather}</div>
             </div>
             <div className="weather-details">
-              <span>💧 {weatherData.weather.humidity}% Humidity</span>
-              <span>💨 {weatherData.weather.wind_speed_kmh} km/h</span>
+              <span>💧 {weatherData.weather.humidity}% {language === 'kn' ? 'ತೇವಾಂಶ' : 'Humidity'}</span>
+              <span>💨 {weatherData.weather.wind_speed_kmh} km/h {language === 'kn' ? 'ಗಾಳಿ' : 'Wind'}</span>
             </div>
             {weatherData.farming_advice && (
               <div className="weather-advice-snippet">
                 💡 {weatherData.farming_advice.split('\n')[0]}
               </div>
             )}
+          </div>
+        ) : (
+          <div className="hero-weather-card hero-weather-card-hint">
+            <div className="weather-card-header">
+              <span className="weather-badge">🌦️ {language === 'en' ? 'Live Weather' : 'ಹವಾಮಾನ'}</span>
+            </div>
+            <p className="hero-weather-hint-text">
+              {language === 'en'
+                ? '👈 Select your district from the sidebar to view live temperature, humidity, wind & farming tips.'
+                : '👈 ನೇರ ತಾಪಮಾನ, ತೇವಾಂಶ, ಗಾಳಿ ಮತ್ತು ಕೃಷಿ ಸಲಹೆ ವೀಕ್ಷಿಸಲು ಎಡಭಾಗದಲ್ಲಿ ನಿಮ್ಮ ಜಿಲ್ಲೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.'}
+            </p>
           </div>
         )}
       </div>

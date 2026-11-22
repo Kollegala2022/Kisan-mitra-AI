@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './ChatWindow.css';
 import Message from './Message';
 import HomeHero from './HomeHero';
+import WeatherCard from './WeatherCard';
 
 function ChatWindow({
   messages,
@@ -74,6 +75,14 @@ function ChatWindow({
           />
         ) : (
           <div className="messages-stream">
+            {weatherData && weatherData.weather && (
+              <WeatherCard
+                weatherData={weatherData}
+                district={district}
+                language={language}
+                compact={true}
+              />
+            )}
             {messages.map((msg) => (
               <Message key={msg.id} message={msg} language={language} />
             ))}
